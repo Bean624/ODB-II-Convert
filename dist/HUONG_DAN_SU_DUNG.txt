@@ -1,0 +1,47 @@
+========================================================================
+   PHẦN MỀM CHẨN ĐOÁN & ĐO NĂNG LƯỢNG PIN XE ĐIỆN VINFAST (VF-DIAG PRO)
+========================================================================
+
+1. YÊU CẦU PHẦN CỨNG & KẾT NỐI:
+--------------------------------
+- Máy tính: Windows 10 hoặc Windows 11 (64-bit).
+- Xe thử nghiệm: Xe điện VinFast (VF 3, VF 5, VF 6, VF 7, VF 8, VF 9, VF e34).
+- Thiết bị cáp OBD-II:
+  + Cáp vLinker FS USB, OBDLink SX/EX USB, hoặc cáp USB-OBD chip FTDI / CH340.
+  + LƯU Ý QUAN TRỌNG: Nếu dùng sợi cáp 1 đầu OBD-II và 1 đầu HDMI, đây là cáp
+    nối của hộp chẩn đoán (VCI Multiplexer). Tuyệt đối KHÔNG cắm đầu HDMI vào
+    cổng HDMI của laptop (cổng HDMI laptop là cổng xuất màn hình). Bạn phải
+    cắm cáp vào hộp VCI, và cắm dây USB từ hộp VCI vào laptop.
+
+2. CÁC BƯỚC SỬ DỤNG TẠI XƯỞNG (KHÔNG CẦN CẤU HÌNH):
+--------------------------------------------------
+Bước 1: Cắm đầu cáp OBD-II vào giắc chẩn đoán OBD-II trên xe (dưới vô lăng/chân phanh).
+Bước 2: Bật nguồn xe ở chế độ ACC (bật điện phụ trợ) hoặc đạp phanh bấm START 
+        để màn hình hiện chữ READY (sẵn sàng vận hành) hoặc cắm sạc xe.
+Bước 3: Cắm đầu USB của cáp vào máy tính.
+Bước 4: Nhấp đúp chuột mở file "VF-DIAG-PRO.exe".
+        -> Phần mềm sẽ TỰ ĐỘNG nhận diện cổng COM và TỰ ĐỘNG đọc toàn bộ thông số.
+        -> Kỹ thuật viên không cần gõ lệnh hay cấu hình phức tạp.
+
+3. XỬ LÝ SỰ CỐ NẾU MÁY TÍNH KHÔNG NHẬN CÁP (HIỆN MẤT KẾT NỐI):
+--------------------------------------------------------------
+- Kiểm tra lại chìa khóa xe: Xe phải đang BẬT ĐIỆN (ACC hoặc READY). Nếu xe tắt máy,
+  hộp BMS sẽ ngắt nguồn và không trả lời tín hiệu CAN.
+- Kiểm tra Driver cáp USB trên máy tính:
+  Mở Device Manager trên Windows, xem mục "Ports (COM & LPT)":
+  + Nếu thấy cổng COM (ví dụ COM3, COM4...) -> Đã nhận driver tốt.
+  + Nếu thấy dấu chấm than vàng -> Máy tính thiếu driver của chip cáp USB:
+    * Chip FTDI: Tải driver tại https://ftdichip.com/drivers/vcp-drivers/
+    * Chip CH340: Tải driver tại http://www.wch-ic.com/downloads/CH341SER_EXE.html
+    * Cáp vLinker FS: Windows Update thường tự cài, hoặc cắm sang cổng USB khác.
+
+4. CÁC TÍNH NĂNG CHÍNH:
+-----------------------
+- Xem trực tiếp: SOH (Độ chai pin), SOC, Tổng điện áp Pack, Dòng điện sạc/xả.
+- Đo công suất & Thụt pin: Tính công suất tức thời (kW), kWh xả tích lũy, 
+  và trạng thái xe (Đang chạy, Đang sạc, Đang bật điện nghỉ...).
+- Đo nhiệt độ nước làm mát bộ pin (Battery Pack Coolant).
+- Xem điện áp chi tiết của 10 Module tế bào pin.
+- Bấm nút "[XUAT DU LIEU CSV]" để lưu dữ liệu kiểm tra xe.
+- Bấm nút "[IN BAO CAO]" để in biên bản kiểm định pin cho khách hàng.
+========================================================================

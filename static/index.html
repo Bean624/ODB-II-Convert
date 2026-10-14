@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VinFast EV Diagnostic Tool - BMS & Power Telemetry</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="diagnostic-shell">
+    <!-- Technical Top Header -->
+    <header class="top-header">
+      <div class="top-header-left">
+        <div class="app-title">VF-DIAG WORKSHOP | HE THONG CHUAN DOAN PIN XE DIEN VINFAST</div>
+        <div class="app-subtitle">Giao thuc ISO 14229 UDS / Service 0x22 (ReadDataByIdentifier) | Baudrate CAN: 500 kbps</div>
+      </div>
+      <div class="top-header-right">
+        <span class="vehicle-meta-tag" id="vehicleModelDisplay">XE: VINFAST VF 5 PLUS</span>
+        <span class="vehicle-meta-tag" id="vinDisplay">VIN: RLNV5JSE0TH720262</span>
+        <span class="vehicle-meta-tag" id="odoDisplay">ODO: 29,988 KM</span>
+        <span class="system-clock" id="clockDisplay">--:--:--</span>
+      </div>
+    </header>
+
+    <!-- Control & Connection Strip -->
+    <section class="control-strip">
+      <div class="control-group">
+        <label class="control-label" for="portSelect">CONG COM / USB:</label>
+        <select class="form-select" id="portSelect">
+          <option value="">Dang quet cong COM...</option>
+        </select>
+        <button class="btn" id="btnRefreshPorts" title="Quet lai cong COM">QUET LAI</button>
+      </div>
+
+      <div class="control-group">
+        <label class="control-label" for="baudSelect">BAUDRATE:</label>
+        <select class="form-select" id="baudSelect">
+          <option value="115200" selected>115200 (vLinker / STN / USB-Serial)</option>
+          <option value="38400">38400 (ELM327 tieu chuan)</option>
+          <option value="500000">500000 (Toc do cao)</option>
+          <option value="2000000">2000000 (CANable / FTDI)</option>
+        </select>
+      </div>
+
+      <div class="control-actions">
+        <button class="btn btn-primary" id="btnConnect">KET NOI</button>
+        <button class="btn" id="btnToggleScan" disabled>DOC LIVE</button>
+        <button class="btn" id="btnDemoMode">MO PHONG OFFLINE</button>
+        <button class="btn" id="btnOpenFile">MO FILE EXCEL</button>
+        <button class="btn" id="btnExportCSV">XUAT CSV</button>
+        <button class="btn" id="btnExportReport">IN BAO CAO</button>
+      </div>
+
+      <div style="margin-left: auto;">
+        <span class="status-badge offline" id="connectionStatusBadge">MAT KET NOI</span>
+      </div>
+    </section>
+
+    <!-- Main Workspace -->
+    <main class="workspace-container">
+      
+      <!-- Section 1: Power & Battery Drain Monitoring -->
+      <section class="tech-section">
+        <div class="tech-section-header">
+          <span class="section-heading">1. GIAM SAT CONG SUAT VA TIEU THU DIEN NANG BO PIN (POWER & BATTERY DRAIN)</span>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <span class="status-badge normal" id="operatingStateBadge">CHUA XAC DINH</span>
+            <button class="btn" id="btnResetSession" style="padding: 2px 8px; font-size: 11px;">DAT LAI PHIEN DO</button>
+          </div>
+        </div>
+        <div class="tech-section-body">
+          <div class="metrics-row grid-cols-4">
+            <div class="metric-panel">
+              <div class="metric-title">
+                <span>CONG SUAT TUC THOI (P = V * I)</span>
+                <span class="metric-did">TINH TOAN</span>
+              </div>
+              <div class="metric-data" id="instantPowerVal">+0.420 <span class="metric-data-sub">kW</span></div>
+              <div class="metric-desc" id="instantPowerW">420.2 W (Dong dien x Dien ap)</div>
+            </div>
+
+            <div class="metric-panel">
+              <div class="metric-title">
+                <span>DONG DIEN BO PIN (I)</span>
+                <span class="metric-did">DID 0xF04B</span>
+              </div>
+              <div class="metric-data" id="packCurrentVal">+1.09 <span class="metric-data-sub">A</span></div>
+              <div class="metric-desc">Quy uoc: (+) Xa dien / tieu thu | (-) Nap dien / sac</div>
+            </div>
+
+            <div class="metric-panel">
+              <div class="metric-title">
+                <span>DIEN AP PACK PIN (V)</span>
+                <span class="metric-did">DID 0xF013</span>
+              </div>
+              <div class="metric-data" id="packVoltageVal">385.5 <span class="metric-data-sub">V</span></div>
+              <div class="metric-desc">Tong dien ap toan bo khoi pin</div>
+            </div>
+
+            <div class="metric-panel">
+              <div class="metric-title">
+                <span>TOC DO TIEU HAO UOC TINH</span>
+                <span class="metric-did">DRAIN RATE</span>
+              </div>
+              <div class="metric-data" id="drainPerHourVal">0.420 <span class="metric-data-sub">kWh/h</span></div>
+              <div class="metric-desc">Nang luong mat moi gio neu duy tri tai nay</div>
+            </div>
+          </div>
+
+          <div class="metrics-row grid-cols-4" style="margin-top: 10px;">
+            <div class="metric-panel">
+              <div class="metric-title">
+                <span>NANG LUONG XA PHIEN DO</span>
+                <span class="metric-did">INTEGRAL</span>
+              </div>
+              <div class="metric-data" id="cumulativeDischargeVal">0.0000 <span class="metric-data-sub">kWh</span></div>
+              <div class="metric-desc">Tong dien nang tieu thu trong phien</div>
+            </div>
+
+            <div class="metric-panel">
+              <div class="metric-title">
+                <span>NANG LUONG NAP PHIEN DO</span>
+                <span class="metric-did">INTEGRAL</span>
+              </div>
+              <div class="metric-data" id="cumulativeChargeVal">0.0000 <span class="metric-data-sub">kWh</span></div>
+              <div class="metric-desc">Tong dien nang nạp vao trong phien</div>
+            </div>
+
+            <div class="metric-panel">
+              <div class="metric-title">
+                <span>THOI GIAN PHIEN DO</span>
+                <span class="metric-did">TIMER</span>
+              </div>
+              <div class="metric-data" id="sessionTimeVal">00:00:00</div>
+              <div class="metric-desc" id="sessionSampleVal">Mau do: 0 mau</div>
+            </div>
+
+            <div class="metric-panel">
+              <div class="metric-title">
+                <span>MUC SUT SOC TRONG PHIEN</span>
+                <span class="metric-did">DELTA SOC</span>
+              </div>
+              <div class="metric-data" id="socDropVal">0.0 <span class="metric-data-sub">%</span></div>
+              <div class="metric-desc" id="socInitialVal">SOC bat dau: 80% | Hien tai: 80%</div>
+            </div>
+          </div>
+
+          <!-- Technical Assessment Callout -->
+          <div class="tech-callout info" id="technicalAssessmentBox">
+            <strong>Danh gia ky thuat tieu hao pin: </strong>
+            <span id="technicalAssessmentText">Xe dang dung bat dien, dong dien tieu thu 1.09 A (cong suat 420.2 W). Tieu hao uoc tinh 0.42 kWh/gio phuc vu man hinh, ECU va DC-DC 12V. Khong ghi nhan hien tuong thut pin bat thuong.</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 2: Core Battery Vitals -->
+      <section class="tech-section">
+        <div class="tech-section-header">
+          <span class="section-heading">2. THONG SO SUC KHOE & DUNG LUONG BO PIN (BMS CORE VITALS)</span>
+          <span class="status-badge normal" id="batteryHealthStatus">DAT CHUAN BẢO HÀNH (> 70%)</span>
+        </div>
+        <div class="tech-section-body">
+          <div class="metrics-row grid-cols-4">
+            <div class="metric-panel">
+              <div class="metric-title">
+                <span>PACK SOH (SUC KHOE PIN)</span>
+                <span class="metric-did">DID 0xF027</span>
+              </div>
+              <div class="metric-data" id="sohVal">99 <span class="metric-data-sub">%</span></div>
+              <div class="metric-desc" id="degradationDesc">Do chai pin thuc te: 1.0%</div>
+            </div>
+
+            <div class="metric-panel">
+              <div class="metric-title">
+                <span>PACK SOC (HIEN THI / THUC TE)</span>
+                <span class="metric-did">DID 0xF026 / F079</span>
+              </div>
+              <div class="metric-data" id="socVal">80 <span class="metric-data-sub">%</span></div>
+              <div class="metric-desc" id="realSocDesc">Real SOC tu BMS: 80.0%</div>
+            </div>
+
+            <div class="metric-panel">
+              <div class="metric-title">
+                <span>LECH AP CELL PIN (DELTA V)</span>
+                <span class="metric-did">DID 0xF01B - F02E</span>
+              </div>
+              <div class="metric-data" id="cellDeltaVal">0.0 <span class="metric-data-sub">mV</span></div>
+              <div class="metric-desc" id="cellVMinMaxDesc">Vmin: 3.300 V | Vmax: 3.300 V</div>
+            </div>
+
+            <div class="metric-panel">
+              <div class="metric-title">
+                <span>DIEN AP AC QUY 12V</span>
+                <span class="metric-did">DID 0xF122</span>
+              </div>
+              <div class="metric-data" id="aux12vVal">13.1 <span class="metric-data-sub">V</span></div>
+              <div class="metric-desc">Ac quy phu tro van hanh on dinh</div>
+            </div>
+          </div>
+
+          <div class="metrics-row grid-cols-4" style="margin-top: 10px;">
+            <div class="metric-panel">
+              <div class="metric-title">
+                <span>DIEN NANG NAP TRON DOI</span>
+                <span class="metric-did">DID 0xF071</span>
+              </div>
+              <div class="metric-data" id="energyStoredVal">5,089 <span class="metric-data-sub">kWh</span></div>
+              <div class="metric-desc">Tong dien da nap qua pack pin</div>
+            </div>
+
+            <div class="metric-panel">
+              <div class="metric-title">
+                <span>DIEN NANG XA TRON DOI</span>
+                <span class="metric-did">DID 0xF072</span>
+              </div>
+              <div class="metric-data" id="energySuppliedVal">4,871 <span class="metric-data-sub">kWh</span></div>
+              <div class="metric-desc">Hieu suat hoan tra: 95.7%</div>
+            </div>
+
+            <div class="metric-panel">
+              <div class="metric-title">
+                <span>RO-LE CAO AP (CONTACTORS)</span>
+                <span class="metric-did">DID 0xF036 / F037 / F038</span>
+              </div>
+              <div class="metric-data" id="contactorSummary">DONG / DONG / MO</div>
+              <div class="metric-desc" id="contactorAgingDesc">Chu ky dong ngat (+/-): 804 lan</div>
+            </div>
+
+            <div class="metric-panel">
+              <div class="metric-title">
+                <span>DIEN TRO CACH DIEN</span>
+                <span class="metric-did">DID 0xF03C</span>
+              </div>
+              <div class="metric-data" id="isolationVal">4,988 <span class="metric-data-sub">kΩ</span></div>
+              <div class="metric-desc">Dat tieu chuan cach dien cao ap</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 3: Thermal & Cooling (Battery Pack Only) -->
+      <section class="tech-section">
+        <div class="tech-section-header">
+          <span class="section-heading">3. HE THONG LAM MAT BO PIN (BATTERY THERMAL MANAGEMENT)</span>
+          <span class="status-badge normal">BOM HOAT DONG BINH THUONG</span>
+        </div>
+        <div class="tech-section-body">
+          <div class="tech-callout warning" style="margin-top: 0; margin-bottom: 10px;">
+            <strong>Luu y phan biet: </strong>
+            Cac thong so duoi day la he thong nuoc lam mat cua bo pin cao ap (Thermal BMS), <u>KHONG PHAI</u> he thong dieu hoa lam lanh cabin xe. Cong suat may nen lốc lạnh cabin xe thuoc ECU HVAC rieng (0x7B0).
+          </div>
+
+          <div class="metrics-row grid-cols-4">
+            <div class="metric-panel">
+              <div class="metric-title">
+                <span>NHIET DO NUOC LAM MAT VAO PIN</span>
+                <span class="metric-did">DID 0xF01D</span>
+              </div>
+              <div class="metric-data" id="coolantInVal">34.0 <span class="metric-data-sub">°C</span></div>
+              <div class="metric-desc">Duong nuoc intake vao khoi pin</div>
+            </div>
+
+            <div class="metric-panel">
+              <div class="metric-title">
+                <span>NHIET DO NUOC LAM MAT RA PIN</span>
+                <span class="metric-did">DID 0xF035</span>
+              </div>
+              <div class="metric-data" id="coolantOutVal">34.0 <span class="metric-data-sub">°C</span></div>
+              <div class="metric-desc">Duong nuoc outlet ra khoi pin</div>
+            </div>
+
+            <div class="metric-panel">
+              <div class="metric-title">
+                <span>LUU LUONG BOM LAM MAT PIN</span>
+                <span class="metric-did">DID 0xF01C</span>
+              </div>
+              <div class="metric-data" id="massflowVal">15 <span class="metric-data-sub">L/min</span></div>
+              <div class="metric-desc">Luu luong the tich nuoc tuan hoan</div>
+            </div>
+
+            <div class="metric-panel">
+              <div class="metric-title">
+                <span>NHIET DO CELL (MIN / MAX / AVG)</span>
+                <span class="metric-did">DID 0xF01E / F01F / F03D</span>
+              </div>
+              <div class="metric-data" id="cellTempRangeVal">33.0 / 35.0 <span class="metric-data-sub">°C</span></div>
+              <div class="metric-desc" id="packTempAvgVal">Nhiet do trung binh pack: 34.1 °C</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 4: 10 Module Voltages -->
+      <section class="tech-section">
+        <div class="tech-section-header">
+          <span class="section-heading">4. DIEN AP 10 MODULE PIN (MODULE VOLTAGE DISTRIBUTION - 116 CELLS)</span>
+          <span style="font-size: 11px; font-family: var(--font-mono); color: var(--text-secondary);">DID: 0xF02F | Do phan giai: 0.1V</span>
+        </div>
+        <div class="tech-section-body">
+          <div class="metrics-row grid-cols-10" id="moduleGrid">
+            <!-- Dynamically populated 10 modules -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 5: Protocol Verification & Full Diagnostic Data Table -->
+      <section class="tech-section">
+        <div class="tech-section-header">
+          <span class="section-heading">5. BANG TRA CUU & XAC MINH TOAN BO THONG SO CHUAN UDS ISO 14229</span>
+          <span style="font-size: 11px; font-family: var(--font-mono); color: var(--text-secondary);" id="paramCountBadge">117 thong so</span>
+        </div>
+        <div class="tech-section-body">
+          <div class="table-filter-bar">
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <label class="control-label">LOC:</label>
+              <select class="form-select" id="filterCategory">
+                <option value="ALL">TAT CA THONG SO</option>
+                <option value="VERIFIED">DA XAC MINH (BMS DATAFLOW)</option>
+                <option value="UNSUPPORTED">KHONG DUOC BMS HO TRO (HVAC CABIN)</option>
+                <option value="POWER">CONG SUAT & DONG DIEN</option>
+                <option value="BATTERY">PIN & SOH/SOC</option>
+                <option value="COOLING">LAM MAT & NHIET DO</option>
+                <option value="MODULE">MODULE & CELL</option>
+                <option value="VEHICLE">XE & HE THONG 12V</option>
+              </select>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <label class="control-label">TIM KIEM:</label>
+              <input type="text" class="form-input" id="searchInput" placeholder="Ma DID hoac ten thong so..." style="width: 260px;">
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th class="col-did">MA DID</th>
+                  <th>TEN THONG SO KY THUAT</th>
+                  <th class="col-val">GIA TRI</th>
+                  <th class="col-unit">DON VI</th>
+                  <th class="col-raw">HEX THO (RAW)</th>
+                  <th class="col-ecu">ECU NGUON</th>
+                  <th class="col-status">TRANG THAI XAC MINH</th>
+                  <th>GHI CHU KY THUAT</th>
+                </tr>
+              </thead>
+              <tbody id="tableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Hidden file input for Excel upload -->
+    <input type="file" id="fileInput" accept=".xlsx,.xls,.json,.csv" style="display: none;">
+
+    <!-- Technical Footer -->
+    <footer class="bottom-footer">
+      <span>VF-DIAG WORKSHOP v2.7.0 | Chuan chẩn đoán: ISO 14229 UDS / ISO 15765-4 CAN | ECU BMS 0x7E4</span>
+      <span>Log ky thuat ghi tai: vf_diag_workshop.log</span>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
